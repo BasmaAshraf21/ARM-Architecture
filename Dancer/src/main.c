@@ -13,7 +13,7 @@
 
 #include "file.h"
 
-void LEDMXE_Dancer(void);
+
 
 volatile u16 i = 0;
 
@@ -59,16 +59,6 @@ void main(void)
 	{
 
 		HLEDMRX_Dancer(data);
-
-	}
-}
-
-void LEDMXE_Dancer(void)
-{
-	while(1)
-	{
-		MSTK_voidInit();
-		MSTK_voidSetIntervalPeriodic(125, voidSetDAC);
 
 	}
 }
