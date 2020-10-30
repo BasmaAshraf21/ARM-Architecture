@@ -6,21 +6,33 @@
 C_SRCS += \
 ../src/DIO_program.c \
 ../src/ESP_program.c \
+../src/EXTI0_program.c \
+../src/LEDMRX_program.c \
+../src/NVIC_program.c \
 ../src/RCC_program.c \
+../src/SYSTICK_program.c \
 ../src/USART_program.c \
 ../src/main.c 
 
 OBJS += \
 ./src/DIO_program.o \
 ./src/ESP_program.o \
+./src/EXTI0_program.o \
+./src/LEDMRX_program.o \
+./src/NVIC_program.o \
 ./src/RCC_program.o \
+./src/SYSTICK_program.o \
 ./src/USART_program.o \
 ./src/main.o 
 
 C_DEPS += \
 ./src/DIO_program.d \
 ./src/ESP_program.d \
+./src/EXTI0_program.d \
+./src/LEDMRX_program.d \
+./src/NVIC_program.d \
 ./src/RCC_program.d \
+./src/SYSTICK_program.d \
 ./src/USART_program.d \
 ./src/main.d 
 

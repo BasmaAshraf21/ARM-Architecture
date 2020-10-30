@@ -1,19 +1,24 @@
-/*************************************************/
-/* Author  : Basma Ashraf                        */
-/* Date    : 29 sep 2020                          */
-/* Version : V01                                 */
-/*************************************************/
-#ifndef _ESP_CONFIG_H
-#define _ESP_CONFIG_H
+/*
+ *
+ *  Created on: Oct 1, 2020
+ *      Author: Mohamed  Ebead
+ */
+
+
+
+#ifndef ESP_CONFIG_H
+#define ESP_CONFIG_H
+
+/**-----------------------------------------------------------------------------------------------------------*/
 
 
 #define MODE                 "TCP"
 #define IP                   "162.253.155.227"
 #define PORT                 "80"
-#define REQUEST_LED_STATUS   "GET http://embedded.freetzi.com/status.txt"
+#define REQUEST_LED_STATUS   "GET http://embedded.freetzi.com/satuts.txt"
 
-#define ROUTER_SSID          "R.B.M"
-#define ROUTER_PASSWORD      "262119*64"
+#define ROUTER_SSID          "RBM"
+#define ROUTER_PASSWORD      "2621192020"
 
 
 
