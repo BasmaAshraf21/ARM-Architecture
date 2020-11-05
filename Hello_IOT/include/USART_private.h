@@ -1,16 +1,22 @@
+/*****************************************************************************************/
+/* Author : Basma Ashraf                                                                 */
+/* Date   : 01 11 2020                                                                   */
+/* Verson : V01                                                                          */
+/*****************************************************************************************/
+#ifndef USART1_PRIVATE_H
+#define USART1_PRIVATE_H
 
-#ifndef USART_PRIVATE_H
-#define USART_PRIVATE_H
-
-typedef struct{
+typedef struct
+{
 	volatile u32 SR;
 	volatile u32 DR;
 	volatile u32 BRR;
-	volatile u32 CR[3];
+	volatile u32 CR1;
+	volatile u32 CR2;
+	volatile u32 CR3;
 	volatile u32 GTPR;
-}USART_Register;
+}USART1_register;
+#define USART1	((USART1_register*)0x40013800)
 
-
-#define 	USART1 		((USART_Register *) 0x40013800)
 
 #endif

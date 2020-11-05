@@ -1,8 +1,8 @@
 /*
  * main.c
  *
- *  Created on: ??þ/??þ/????
- *      Author: dell
+ *  Created on: 01 / 11 / 2020
+ *      Author: Basma Ashraf
  */
 
 #include "STD_TYPES.h"
@@ -15,10 +15,7 @@
 #include "USART_interface.h"
 #include "ESP_interface.h"
 #include "ESP_config.h"
-#include "NVIC_interface.h"
-#include "EXTI0_interface.h"
-#include "SYSTICK_interface.h"
-#include "LEDMRX_interface.h"
+
 
 void LED_ON   (void)   ;
 void LED_OFF  (void)   ;
@@ -30,33 +27,36 @@ int main (void)
 
 	/* Enable Peripheral 2 on ABP2 Bus (GPIOA) */
 		RCC_voidEnableClock(RCC_APB2, 2);
-		RCC_voidEnableClock(RCC_APB2 , 3);
-
+		RCC_voidEnableClock(RCC_APB2 , 14);
+		MGPIO_voidSetPinDirection(GPIOA, PIN9, OUTPUT_SPEED_10MHZ_AFPP);
+		MGPIO_voidSetPinDirection(GPIOA, PIN10, INPUT_FLOATING);
+		MGPIO_voidSetPinDirection(GPIOA, PIN0, OUTPUT_SPEED_10MHZ_PP);
 		MSTK_voidInit();
 
-	u8  Led_Status = '1';
+	u8  Led_Status = 0;
+	USART1_voidInit();
 
 	while(1)
 	{
-		MUSART1_voidInit();
+
 		ESP_voidInit();
 		/* Connect to Router, sending name and password as strings*/
-		ESP_voidConnctToRouter(ROUTER_SSID, ROUTER_PASSWORD);
+		ESP_voidConnectToWIFI(ROUTER_SSID, ROUTER_PASSWORD);
 
 		/*Connecting to server, sending data transmit mode UDP or TCP and IP of server and port number as strings*/
 		/* We connect each time as my server is free one and disconnects automatically, if you got a server yourself you don't
 		 * have to do so
 		 */
-		ESP_voidConnectToServer(MODE, IP, PORT);
+		Led_Status = ESP_voidConnectToServer(IP);
 
-		/* Send the request as string*/
-		Led_Status = ESP_u8ExecuteRequest(REQUEST_LED_STATUS);
-		//u8 * data = ESP_u8ExecuteRequest(REQUEST_LED_STATUS);
+
 		switch ( Led_Status )
 		{
 			case '0' : LED_OFF() ; break ;
 			case '1' : LED_ON () ; break ;
+
 		}
+
 
 	}
 
@@ -65,9 +65,7 @@ int main (void)
 
 void LED_ON (void)
 {
-	u8 data[34]={0, 255, 145, 170, 68, 0, 254, 17, 17, 17, 254, 0, 131, 133, 137, 145, 161, 65, 0, 255, 1, 2, 4, 2, 1, 255, 0, 254, 17, 17, 17, 254, 0, 0};
-	HLEDMRX_voidInit();
-	HLEDMRX_Animation(data);
+	MGPIO_voidSetPinValue(GPIOA, PIN0, HIGH);
 }
 
 /**-----------------------------------------------------------------------------------------------------------*/

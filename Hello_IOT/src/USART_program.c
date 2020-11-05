@@ -1,55 +1,99 @@
+/*****************************************************************************************/
+/* Author : Basma Ashraf                                                                 */
+/* Date   : 01 11 2020                                                                   */
+/* Verson : V01                                                                          */
+/*****************************************************************************************/
 #include "STD_TYPES.h"
 #include "BIT_MATH.h"
 
 #include "USART_interface.h"
+#include  "USART_config.h"
 #include "USART_private.h"
-#include "USART_config.h"
 
+#include<math.h>
 
-void MUSART1_voidInit(void)
+void USART1_voidInit(void)
 {
-	/*	baud rate = 9600		*/
-	USART1 -> BRR = 0x341;
-
-	SET_BIT((USART1-> CR[0]), 3);			/* Enabling Transmitter */
-	SET_BIT((USART1-> CR[0]), 2);			/* Enabling Receiver */
-	SET_BIT((USART1-> CR[0]), 13);			/* Enabling USART */
+	/* put boud rate in BRR register */
+	f32 USARTDIV;
+	u16 mantissa;
+	u8 fraction;
 	
-	USART1 -> SR = 0;						/* Clearing status register */
+	USARTDIV = (f32)F_CLK/(16*USART1_BOUD_RATE);
+	mantissa = (u16)USARTDIV;
+	fraction = round((USARTDIV - mantissa) * 16) ;
+	if(fraction > 15)
+	{
+		USART1->BRR |= ((mantissa + 1) << 4);
+		USART1->BRR |= 0b0000;
+	}
+	else
+	{
+		USART1->BRR |= (mantissa << 4);
+		USART1->BRR |= fraction;
+	}
+
+	USART1->CR1 |= USART1_WORD_LENGTH << 12;
+	USART1->CR1 |= USART1_PARITY_ENABLE <<10;
+	USART1->CR1 |= USART1_PARITY_SELECTION << 9;
+	USART1->CR1 |= USART1_PARITY_INTERRUPT_ENABLE << 8;
+	USART1->CR1 |= USART1_TX_INTERRUPT_ENABLE << 7;
+	USART1->CR1 |= USART1_TRANSMISSION_COMPLETE_INTERRUPT_ENABLE << 6;
+	USART1->CR1 |= USART1_RX_INTERRUPT_ENABLE << 5;
+	USART1->CR1 |= 1<<3; /* enable transmitter */
+	USART1->CR1 |= 1<<2; /* enable receiver */
+	USART1->CR2 |= USART1_STOP_BIT << 12 ;
+	USART1->CR1 |= 1<<13; /* enable USART1 */
 }
 
-void MUSART1_voidTransmit(u8 arr[])
+void USART1_voidSendByte(u8 copy_u8Data)
 {
-	u8 i = 0;
-	while(arr[i] != '\0'){
-		USART1 -> DR = arr[i];
-		while((GET_BIT((USART1 -> SR), 6)) == 0)
-		{
-			asm("NOP");
-		}
+	USART1->DR = copy_u8Data;
+	while(!(GET_BIT(USART1->SR,6)));
+
+}
+
+void USART1_voidSendString(u8 const*arr)
+{
+	u8 i=0;
+	while(arr[i]!='\0')
+	{
+		USART1_voidSendByte(arr[i]);
 		i++;
 	}
-	
 }
 
-u8 MUSART1_u8Receive(u32 Copy_u32timeout)
+u8 USART1_u8ReceiveByte(u32 Copy_u32timeout)
 {
-	u32 timeout = 0;
-	
-	u8 Loc_u8ReceivedData = 0;
-	while((GET_BIT((USART1 -> SR), 5)) == 0)
+	u8 Local_u8ReceivedData = 0;
+	u32 count = 0;
+	while(!(GET_BIT(USART1->SR,5)))
 	{
-		timeout++;
-		if(timeout == Copy_u32timeout)
+		count++;
+		if(count == Copy_u32timeout)
 		{
-			Loc_u8ReceivedData = 255;
+			Local_u8ReceivedData = 255;
 			break;
 		}
 	}
-	 if (Loc_u8ReceivedData == 0)
-	 {
-		 Loc_u8ReceivedData = USART1 -> DR;
-	 }
-	return (Loc_u8ReceivedData);
+	
+	if(Local_u8ReceivedData == 0)
+	{
+		Local_u8ReceivedData = USART1->DR;
+	}
+	
+	return Local_u8ReceivedData;
 }
 
+void USART1_voidReceiveString(u8 *arr)
+{
+	u8 i = 0;
+	arr[i]=USART1_u8ReceiveByte(1000);
+	while(arr[i] != '#')
+	{
+		i++;
+		arr[i] = USART1_u8ReceiveByte(1000) ;
+
+	}
+	arr[i] = '\0' ;
+}

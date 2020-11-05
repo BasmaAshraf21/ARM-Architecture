@@ -1,196 +1,136 @@
-/*************************************************/
-/* Author  : Basma Ashraf                        */
-/* Date    : 29 sep 2020                         */
-/* Version : V01                                 */
-/*************************************************/
-
-
+/*****************************************************************************************/
+/* Author : Basma Ashraf                                                                 */
+/* Date   : 01 11 2020                                                                   */
+/* Verson : V01                                                                          */
+/*****************************************************************************************/
 #include "STD_TYPES.h"
 #include "BIT_MATH.h"
 
-#include<string.h>
-#include<stdio.h>
-
 #include "USART_interface.h"
+#include "SYSTICK_interface.h"
+
 #include "ESP_interface.h"
 #include "ESP_private.h"
 #include "ESP_config.h"
 
-
-extern char Quotes	[]	;
-extern char Comma 	[]	;
-extern char Closing []	;
-
-extern u8 Local_u8Response[100]  ;
-
 void ESP_voidInit(void)
 {
-	u8 Local_u8Result = 0;
-	
-	while(Local_u8Result == 0)
+	u8 Local_u8ValidFlag = 0;
+
+	while(Local_u8ValidFlag == 0)
 	{
-		/* stp ECHO */
-		MUSART1_voidTransmit(CMD_SWITCH_ECHO_OFF);
-		/*	Check command is done right
-					ATE0 returns OK if all is okay*/
-		Local_u8Result = ESP_u8ValidateCmd(ECHO_TIMEOUT);
-	}	
-	 Local_u8Result = 0;
-	
-	while(Local_u8Result == 0)
+		/* disable ecco */
+		USART1_voidSendString("ATE1\r\n");
+		Local_u8ValidFlag = u8ValidateCmd(ECHO_TIMEOUT);
+	}
+	Local_u8ValidFlag = 0;
+
+	while(Local_u8ValidFlag == 0)
 	{
-		/* set station mode */
-		MUSART1_voidTransmit(CMD_STATION_MODE);
-		/*	Check command is done right
-					AT+CWMODE=1 returns OK if all is okay*/
-		Local_u8Result = ESP_u8ValidateCmd(MODE_TIMEOUT);
+		/* select wifi mode */
+		USART1_voidSendString("AT+CWMODE=1\r\n");
+		Local_u8ValidFlag = u8ValidateCmd(MODE_TIMEOUT);
 	}
 }
 
-/**------------------------------------------------------------------------------------------------------------------*/
-/**
- * @fun   ESP_voidConnctToRouter
- * @brief this function connects the ESP8566 to the WIFI
- * @param pu8WIFIName
- * @param pu8WIFIPass
- */
-void ESP_voidConnctToRouter(char *pu8WIFIName, char* pu8WIFIPass)
+void ESP_voidConnectToWIFI(u8 *copy_u8Name ,u8 *copy_u8Password)
 {
 	u8 Local_u8ValidFlag = 0;
-	char Local_u8Router_Command[50];
+	u8 i = 0;
+	u8 j = 0;
+	u8 command[100]={"AT+CWJAP_CUR="};
 
-	/* Empty the pointer that strcat was using last time as it saves at the same location and data may interference*/
-	strcpy(Local_u8Router_Command, "");
+	command[13]='"';
+	while(copy_u8Name[i] != '\0')
+	{
+		command[14+i]=copy_u8Name[i];
+		i++;
+	}
+	command[14+i]='"';
+	i++;
+	command[14+i]=',';
+	i++;
+	command[14+i]='"';
+	i++;
 
-	/*catenating strings to be : "AT+CWJAP_CUR="Copy_u8StrSsid","Copy_u8StrPassword""*/
-	strcat(Local_u8Router_Command, CMD_CONNECT_TO_AP);
-	strcat(Local_u8Router_Command, Quotes);
-
-	strcat(Local_u8Router_Command, pu8WIFIName);
-	strcat(Local_u8Router_Command, Quotes);
-
-	strcat(Local_u8Router_Command, Comma);
-
-	strcat(Local_u8Router_Command, Quotes);
-	strcat(Local_u8Router_Command, pu8WIFIPass);
-	strcat(Local_u8Router_Command, Quotes);
-
-	strcat(Local_u8Router_Command, Closing);
-
+	while(copy_u8Password[j] != '\0')
+	{
+		command[14+i]=copy_u8Password[j];
+		i++;
+		j++;
+	}
+	command[14+i]='"';
+	i++;
+	command[14+i]='\r';
+	i++;
+	command[14+i]='\n';
 	while(Local_u8ValidFlag == 0)
 	{
 		/*Connect to WiFi of name Copy_u8StrSsid and password Copy_u8StrPassword*/
-		MUSART1_voidTransmit(Local_u8Router_Command);
+		USART1_voidSendString(command);
 		/*	Check command is done right
 			AT+CWJAP_CUR="SSID","Pass" returns OK if all is okay*/
-		Local_u8ValidFlag = ESP_u8ValidateCmd(ROUTER_TIMEOUT);
+		Local_u8ValidFlag = u8ValidateCmd(ROUTER_TIMEOUT);
 	}
+
 }
 
-/**------------------------------------------------------------------------------------------------------------------*/
-/**
- * @fun   ESP_voidConnectToServer
- * @brief this function connects the ESP8566 to your server
- * @param pu8Mode
- * @param pu8IP
- * @param pu8Port
- */
-void ESP_voidConnectToServer(char* pu8Mode, char* pu8IP, char* pu8Port)
+u8 ESP_voidConnectToServer(u8 *copy_u8IP)
 {
 	u8 Local_u8ValidFlag = 0;
-	char Local_u8Server_Command[42];
-
-	/* Empty the pointer that strcat was using last time as it saves at the same location and data may interference*/
-	strcpy(Local_u8Server_Command, "");
-
-	/*catenating strings to be : "AT+CIPSTART="Copy_u8StrMode","Copy_u8StrIP",Copy_u8StrPort"
-	 	 Example "AT+CIPSTART="TCP","162.253.155.227",80"    */
-	strcat(Local_u8Server_Command, CMD_ESTABLISH_TCP_CONNECTION );
-
-	strcat(Local_u8Server_Command, Quotes);
-	strcat(Local_u8Server_Command, pu8Mode);
-	strcat(Local_u8Server_Command, Quotes);
-
-	strcat(Local_u8Server_Command, Comma);
-
-	strcat(Local_u8Server_Command, Quotes);
-	strcat(Local_u8Server_Command, pu8IP);
-	strcat(Local_u8Server_Command, Quotes);
-
-	strcat(Local_u8Server_Command, Comma);
-
-	strcat(Local_u8Server_Command, pu8Port);
-
-	strcat(Local_u8Server_Command, Closing);
+	u8 Local_u8Temp_char = 0;
+	u16 i=0;
+	u8 Local_u8TempChar  = 0;
+	u8 command[100] = {"AT+CIPSTART="};
+	command[12]='"';
+	command[13]='T';
+	command[14]='C';
+	command[15]='P';
+	command[16]='"';
+	command[17]=',';
+	command[18]='"';
+	while(copy_u8IP[i] != '\0')
+	{
+		command[19+i]=copy_u8IP[i];
+		i++;
+	}
+	command[19+i]='"';
+	i++;
+	command[19+i]=',';
+	i++;
+	command[19+i]='8';
+	i++;
+	command[19+i]='0';
+	i++;
+	command[19+i]='\r';
+	i++;
+	command[19+i]='\n';
 
 	while(Local_u8ValidFlag == 0)
 	{
-		/*	Connect to Server of IP Copy_u8StrIP with Copy_u8StrMode protocol
-			Either TCP or UDP and on Port Copy_u8StrPort*/
-		MUSART1_voidTransmit(Local_u8Server_Command);
-		/*	Check command is done right
-			AT+CIPSTART="MODE","IP",PORT returns OK if all is okay*/
-		Local_u8ValidFlag = ESP_u8ValidateCmd(SERVER_TIMEOUT);
+		USART1_voidSendString(command);
+		Local_u8ValidFlag = u8ValidateCmd(SERVER_TIMEOUT);
 	}
-}
-
-/**------------------------------------------------------------------------------------------------------------------*/
-/**
- * @fun   ESP_u8ExecuteRequest
- * @brief this function requests a data from the server which the ESP8266 is connected to
- * @param pu8Request
- * @return
- */
-u8 ESP_u8ExecuteRequest(char* pu8Request)
-{
-	u8   Local_u8ValidFlag = 0;
-	u8   Local_u8Temp_char = 0 ;
-	char   Local_u8Send_Command[14];
-	char   Local_u8Request_Command[(strlen(pu8Request) + 5)];
-	char   Local_u8Temp_str[2];
-
-
-	/* Empty the pointer that strcat was using last time as it saves at the same location and data may interference*/
-	strcpy(Local_u8Send_Command, CMD_SEND_DATA);
-
-	/* calculate request length and add 2 for \r\n */
-//	u8 Local_u8NumberOfLetters = strlen(pu8Request) + 2;
-	/*Convert the number of the request letters to String*/
-	sprintf(Local_u8Temp_str, "%i", ( strlen(pu8Request) + 5 ));
-
-	strcat(Local_u8Send_Command, Local_u8Temp_str);
-
-	strcat(Local_u8Send_Command, Closing);
-
+		Local_u8ValidFlag = 0;
 	while(Local_u8ValidFlag == 0)
 	{
-		/*	Send number of letter from the coming request*/
-		MUSART1_voidTransmit(Local_u8Send_Command);
-		/*	Check command is done right
-			AT+CIPSEND=NUMBER returns OK if all is okay*/
-		Local_u8ValidFlag = ESP_u8ValidateCmd(PREREQUEST_TIMEOUT);
+		//USART1_voidSendString("AT+CIPSEND=39\r\n");
+		USART1_voidSendString("AT+CIPSEND=46\r\n");
+		Local_u8ValidFlag = u8ValidateCmd(PREREQUEST_TIMEOUT);
 	}
-
 	Local_u8ValidFlag = 0;
-	strcpy(Local_u8Request_Command, "");
-	strcat(Local_u8Request_Command, pu8Request);
-	strcat(Local_u8Request_Command, Closing);
-
 	while(Local_u8ValidFlag == 0)
 	{
-		/*	Send number of letter from the coming request*/
-		MUSART1_voidTransmit(Local_u8Request_Command);
-		/*	Check command is done right
-			AT+CIPSEND=NUMBER returns OK if all is okay*/
-		Local_u8ValidFlag = ESP_u8ValidateCmd(REQUEST_TIMEOUT);
+		//USART1_voidSendString("GET http://iot.freeoda.com/status.txt\r\n");
+		USART1_voidSendString("GET http://embedded.freetzi.com/status.txt\r\n");
+		Local_u8ValidFlag = u8ValidateCmd(REQUEST_TIMEOUT);
 	}
-
-	/* When we receive data from server it would be in the form +IPD,NUMBER_OF_LETTERS_RECIEVED;DATA*/
 	for(u8 i = 0; i < 98; i++)
 	{
-		/*Checking that the data recieved have IPD*/
+			/*Checking that the data recieved have IPD*/
 		if(Local_u8Response[i] == 'I' && Local_u8Response[i+1] == 'P' && Local_u8Response[i+2] == 'D')
 		{
+
 			/*Return data in the 6th postion after the I*/
 			Local_u8Temp_char = Local_u8Response[i+6];
 		}
@@ -198,14 +138,8 @@ u8 ESP_u8ExecuteRequest(char* pu8Request)
 
 	return Local_u8Temp_char ;
 }
-/**------------------------------------------------------------------------------------------------------------------*/
-/**
- * @fun   u8ValidateCmd
- * @brief this function waits to receive "OK" from the server to validate last command sent to the server
- * @param Copy_u32timeout
- * @return
- */
-static u8 ESP_u8ValidateCmd(u32 Copy_u32timeout)
+
+static u8 u8ValidateCmd(u32 Copy_u32timeout)
 {
 	u8 Local_u8ValidFlag = 0;
 	u8 Local_u8Counter   = 0;
@@ -219,7 +153,7 @@ static u8 ESP_u8ValidateCmd(u32 Copy_u32timeout)
 	/*Make sure that the MC is not receiving any more data from the ESP*/
 	while (Local_u8TempChar != 255)
 	{
-		Local_u8TempChar = MUSART1_u8Receive(Copy_u32timeout);
+		Local_u8TempChar = USART1_u8ReceiveByte(Copy_u32timeout);
 		Local_u8Response[Local_u8Counter] = Local_u8TempChar;
 		Local_u8Counter++;
 	}
